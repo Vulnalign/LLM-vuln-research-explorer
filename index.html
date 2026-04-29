@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnResearch Explorer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 40px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: #a0a0a0;
+      font-size: 1.1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      color: #a0a0a0;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .search-box, .filter-select {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1rem;
+    }
+
+    .search-box:focus, .filter-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .filter-btn {
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #e0e0e0;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+
+    .filter-btn:hover {
+      background: rgba(102, 126, 234, 0.2);
+      border-color: #667eea;
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      color: white;
+    }
+
+    .papers-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .paper-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+    }
+
+    .paper-card:hover {
+      border-color: rgba(102, 126, 234, 0.5);
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+    }
+
+    .paper-title {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      color: #f0f0f0;
+      line-height: 1.4;
+    }
+
+    .paper-meta {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .meta-badge {
+      padding: 4px 12px;
+      background: rgba(102, 126, 234, 0.2);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #b8c5ff;
+    }
+
+    .meta-badge.dataset {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+    }
+
+    .meta-badge.method {
+      background: rgba(251, 146, 60, 0.2);
+      color: #fdba74;
+    }
+
+    .meta-badge.type {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+    }
+
+    .meta-badge.tag {
+      background: rgba(34, 211, 238, 0.2);
+      color: #a5f3fc;
+    }
+
+    .paper-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .link-btn {
+      padding: 8px 16px;
+      background: rgba(102, 126, 234, 0.2);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 6px;
+      color: #b8c5ff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      display: inline-block;
+    }
+
+    .link-btn:hover {
+      background: rgba(102, 126, 234, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .link-btn.github {
+      background: rgba(34, 211, 238, 0.2);
+      border-color: rgba(34, 211, 238, 0.3);
+      color: #a5f3fc;
+    }
+
+    .link-btn.github:hover {
+      background: rgba(34, 211, 238, 0.4);
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #a0a0a0;
+      font-size: 1.1rem;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #a0a0a0;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 VulnResearch Explorer</h1>
+      <p class="subtitle">Interactive exploration of LLM-based vulnerability detection research</p>
+    </div>
+
+    <div id="stats"></div>
+    <div id="controls"></div>
+    <div id="papers" class="loading">Loading papers...</div>
+  </div>
+
+  <script>
+    // Embed data inline
+    const DATA = {
+  "papers": [
+    {
+      "title": "SecLens: Benchmarking LLM Vulnerability Detection Through 5 Stakeholder Lenses on 406 Real-World CVEs",
+      "venue": "arXiv",
+      "year": 2026,
+      "paper_url": "https://arxiv.org/abs/2604.01637",
+      "github_url": "https://github.com/mattersec-labs/seclens",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "The Semantic Trap: Do Fine-Tuned LLMs Learn Vulnerability Root Cause or Just Functional Pattern?",
+      "venue": "arXiv",
+      "year": 2026,
+      "paper_url": "https://arxiv.org/abs/2601.22655",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Fine-tuning"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Root Cause Analysis"
+      ]
+    },
+    {
+      "title": "Sifting the Noise: A Comparative Study of LLM Agents in Vulnerability False Positive Filtering",
+      "venue": "arXiv",
+      "year": 2026,
+      "paper_url": "https://arxiv.org/abs/2601.22952",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Agent-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": [
+        "False Positive Filtering"
+      ]
+    },
+    {
+      "title": "AgenticSCR: An Autonomous Agentic Secure Code Review for Immature Vulnerabilities Detection",
+      "venue": "arXiv",
+      "year": 2026,
+      "paper_url": "https://arxiv.org/abs/2601.19138",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "Agent-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Survey",
+      "tags": []
+    },
+    {
+      "title": "LLM-Based Vulnerability Detection at Project Scale: An Empirical Study",
+      "venue": "arXiv",
+      "year": 2026,
+      "paper_url": "https://arxiv.org/abs/2601.19239",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "MulVul: Retrieval-Augmented Multi-Agent Code Vulnerability Detection via Cross-Model Prompt Evolution",
+      "venue": "arXiv",
+      "year": 2026,
+      "paper_url": "https://arxiv.org/abs/2601.18847",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "RAG",
+        "Agent-based",
+        "Benchmark/Survey",
+        "Prompting"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "VulnLLM-R: Specialized Reasoning LLM with Agent Scaffold for Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2512.07533",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Agent-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Reasoning"
+      ]
+    },
+    {
+      "title": "VULPO: Context-Aware Vulnerability Detection via on-Policy LLM Optimization",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2511.11896",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Specification-Guided Vulnerability Detection with Large Language Models",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2511.04014",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "From Large to Mammoth: A Comparative Evaluation of Large Language Models in Vulnerability Detection",
+      "venue": "NDSS",
+      "year": 2025,
+      "paper_url": "https://www.ndss-symposium.org/ndss-paper/from-large-to-mammoth-a-comparative-evaluation-of-large-language-models-in-vulnerability-detection/",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "Benchmarking LLMs and LLM-based Agents in Practical Vulnerability Detection for Code Repositories",
+      "venue": "ACL",
+      "year": 2025,
+      "paper_url": "https://aclanthology.org/2025.acl-long.1490/",
+      "github_url": "https://github.com/alperen21/JitVul",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Agent-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "A Systematic Literature Review on Detecting Software Vulnerabilities with Large Language Models",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2507.22659",
+      "github_url": "https://github.com/hs-esslingen-it-security/Awesome-LLM4SVD",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Survey",
+      "tags": []
+    },
+    {
+      "title": "LLMxCPG: Context-Aware Vulnerability Detection Through Code Property Graph-Guided Large Language Models",
+      "venue": "Usenix",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2507.16585",
+      "github_url": "https://github.com/qcri/llmxcpg",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Static Analysis",
+        "Graph-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "CLeVeR: Multi-modal Contrastive Learning for Vulnerability Code Representation",
+      "venue": "ACL Findings",
+      "year": 2025,
+      "paper_url": "https://aclanthology.org/2025.findings-acl.414/",
+      "github_url": "https://github.com/yoimiya-nlp/CLeVeR",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "Static Analysis",
+        "Multi-modal"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Mono: Is Your \"Clean\" Vulnerability Dataset Really Solvable? Exposing and Trapping Undecidable Patches and Beyond",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2506.03651",
+      "github_url": "https://github.com/vul337/mono",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Dataset",
+      "tags": []
+    },
+    {
+      "title": "Learning to Focus: Context Extraction for Efficient Code Vulnerability Detection with Language Models",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2505.17460",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "SV-TrustEval-C: Evaluating Structure and Semantic Reasoning in Large Language Models for Source Code Vulnerability Analysis",
+      "venue": "SP",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2505.20630",
+      "github_url": "https://github.com/Jackline97/SV-TrustEval-C",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": [
+        "Reasoning"
+      ]
+    },
+    {
+      "title": "SecVulEval: Benchmarking LLMs for Real-World C/C++ Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2505.19828",
+      "github_url": "https://github.com/basimbd/secvuleval",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "CVE-Bench: Benchmarking LLM-based Software Engineering Agent\u2019s Ability to Repair Real-World CVE Vulnerabilities",
+      "venue": "NAACL",
+      "year": 2025,
+      "paper_url": "https://aclanthology.org/2025.naacl-long.212/",
+      "github_url": "https://github.com/WhileBug/CVEBench",
+      "has_code": true,
+      "datasets": [
+        "CVE"
+      ],
+      "methods": [
+        "LLM-based",
+        "Agent-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": [
+        "Vulnerability Repair"
+      ]
+    },
+    {
+      "title": "R2Vul: Learning to Reason about Software Vulnerabilities with Reinforcement Learning and Structured Reasoning Distillation",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2504.04699",
+      "github_url": "https://github.com/martin-wey/R2Vul",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": [
+        "Reasoning"
+      ]
+    },
+    {
+      "title": "Automated static vulnerability detection via a holistic neuro-symbolic approach",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2504.16057",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Context-Enhanced Vulnerability Detection Based on Large Language Model",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2504.16877",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Everything you wanted to know about LLM-based vulnerability detection but were afraid to ask",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2504.13474",
+      "github_url": "https://anonymous.4open.science/r/CORRECT/README.md",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "MOS: Towards Effective Smart Contract Vulnerability Detection through Mixture-of-Experts Tuning of Large Language Models",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2504.12234",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Smart Contracts"
+      ]
+    },
+    {
+      "title": "Abundant modalities offer more nutrients: multi-modal-based function-level vulnerability detection",
+      "venue": "TOSEM",
+      "year": 2025,
+      "paper_url": "https://dl.acm.org/doi/10.1145/3731557",
+      "github_url": "https://github.com/vinci-grape/MVulD",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "Multi-modal"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Generative Large Language Model usage in Smart Contract Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2504.04685",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Smart Contracts"
+      ]
+    },
+    {
+      "title": "Closing the Gap: A User Study on the Real-world Usefulness of AI-powered Vulnerability Detection & Repair in the IDE",
+      "venue": "ICSE",
+      "year": 2025,
+      "paper_url": "https://www.arxiv.org/abs/2412.14306",
+      "github_url": "https://doi.org/10.6084/m9.figshare.26367139",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Vulnerability Repair"
+      ]
+    },
+    {
+      "title": "Vulnerability Detection with Code Language Models: How Far Are We?",
+      "venue": "ICSE",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2403.18624",
+      "github_url": "https://github.com/DLVulDet/PrimeVul",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Combining Fine-Tuning and LLM-based Agents for Intuitive Smart Contract Auditing with Justifications",
+      "venue": "ICSE",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2403.16073",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Fine-tuning",
+        "Agent-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Smart Contracts"
+      ]
+    },
+    {
+      "title": "LAMD: Context-driven Android Malware Detection and Classification with LLMs",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "http://arxiv.org/abs/2502.13055",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Malware Detection"
+      ]
+    },
+    {
+      "title": "LLMs in Software Security: A Survey of Vulnerability Detection Techniques and Insights",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2502.07049",
+      "github_url": "https://github.com/OwenSanzas/LLM-For-Software-Security",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Survey",
+      "tags": []
+    },
+    {
+      "title": "One-for-All Does Not Work! Enhancing Vulnerability Detection by Mixture-of-Experts (MoE)",
+      "venue": "arXiv",
+      "year": 2025,
+      "paper_url": "https://arxiv.org/abs/2501.16454",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Leveraging Semantic Relations in Code and Data to Enhance Taint Analysis of Embedded Systems",
+      "venue": "Usenix",
+      "year": 2024,
+      "paper_url": "https://www.usenix.org/system/files/usenixsecurity24-zhao.pdf",
+      "github_url": "https://sites.google.com/view/lara-data",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "RAG"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Effective Vulnerable Function Identification based on CVE Description Empowered by Large Language Models",
+      "venue": "ASE",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3691620.3695013",
+      "github_url": "https://github.com/CGCL-codes/VFFinder",
+      "has_code": true,
+      "datasets": [
+        "CVE"
+      ],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "SCALE: Constructing Structured Natural Language Comment Trees for Software Vulnerability Detection",
+      "venue": "ISSTA",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3650212.3652124",
+      "github_url": "https://github.com/Xin-Cheng-Wen/Comment4Vul",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "LLMDFA: Analyzing Dataflow in Code with Large Language Model",
+      "venue": "NeurIPS",
+      "year": 2024,
+      "paper_url": "https://chengpeng-wang.github.io/publications/LLMDFA_NeurIPS2024.pdf",
+      "github_url": "https://github.com/chengpeng-wang/LLMDFA",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Learning to Detect and Localize Multilingual Bugs",
+      "venue": "FSE",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3660804",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "GPTScan: Detecting Logic Vulnerabilities in Smart Contracts by Combining GPT with Program Analysis",
+      "venue": "ICSE",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3597503.3639117",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Smart Contracts"
+      ]
+    },
+    {
+      "title": "Sanitizing Large Language Models in Bug Detection with Data-Flow",
+      "venue": "EMNLP",
+      "year": 2024,
+      "paper_url": "https://aclanthology.org/2024.findings-emnlp.217/",
+      "github_url": "https://github.com/chengpeng-wang/LLMSAN",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "RealVul: Can We Detect Vulnerabilities in Web Applications with LLM?",
+      "venue": "EMNLP",
+      "year": 2024,
+      "paper_url": "https://aclanthology.org/2024.emnlp-main.472",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Where is it? Tracing the Vulnerability-relevant Files from Vulnerability Reports",
+      "venue": "ICSE",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3597503.3639202",
+      "github_url": "https://github.com/anonymous-77400046/vulnerability_file_trace",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Dataflow Analysis-Inspired Deep Learning for Efficient Vulnerability Detection",
+      "venue": "ICSE",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3597503.3623345",
+      "github_url": "https://doi.org/10.6084/m9.figshare.21225413",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Pre-training by Predicting Program Dependencies for Vulnerability Analysis Tasks",
+      "venue": "ICSE",
+      "year": 2024,
+      "paper_url": "https://doi.org/10.1145/3597503.3639142",
+      "github_url": "https://github.com/ZJU-CTAG/PDBERT",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Investigating Large Language Models for Code Vulnerability Detection: An Experimental Study",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2412.18260",
+      "github_url": "https://github.com/SakiRinn/LLM4CVD",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "CleanVul: Automatic Function-Level Vulnerability Detection in Code Commits Using LLM Heuristics",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2411.17274",
+      "github_url": "https://github.com/yikun-li/CleanVul",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "An Empirical Study of Vulnerability Detection using Federated Learning",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2411.16099",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "LLM-SmartAudit: Advanced Smart Contract Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2410.09381",
+      "github_url": "https://github.com/LLMAudit/LLMSmartAuditTool",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Smart Contracts"
+      ]
+    },
+    {
+      "title": "Advancing Bug Detection in Fastjson2 with Large Language Models Driven Unit Test Generation",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2410.09414",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Large Language Model for Vulnerability Detection and Repair: Literature Review and the Road Ahead",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2404.02525",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Survey",
+      "tags": [
+        "Vulnerability Repair"
+      ]
+    },
+    {
+      "title": "StagedVulBERT: Multi-Granular Vulnerability Detection with a Novel Pre-trained Code Model",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2410.05766",
+      "github_url": "https://github.com/YuanJiangGit/StagedVulBERT",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "LLM4Vuln: A Unified Evaluation Framework for Decoupling and Enhancing LLMs' Vulnerability Reasoning",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2401.16185",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": [
+        "Reasoning"
+      ]
+    },
+    {
+      "title": "Enhancing Source Code Security with LLMs: Demystifying The Challenges and Generating Reliable Repairs",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2409.00571",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Vulnerability Repair"
+      ]
+    },
+    {
+      "title": "Outside the Comfort Zone: Analysing LLM Capabilities in Software Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2408.16400",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "ANVIL: Anomaly-based Vulnerability Identification without Labelled Training Data",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2408.16028",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Top Score on the Wrong Exam: On Benchmarking in Machine Learning for Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2408.12986",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "Comparison of Static Application Security Testing Tools and Large Language Models for Repo-level Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2407.16235",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Vul-RAG: Enhancing LLM-based Vulnerability Detection via Knowledge-level RAG",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2406.11147",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "RAG"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Security Vulnerability Detection with Multitask Self-Instructed Fine-Tuning of Large Language Models",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2406.05892",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Fine-tuning"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Generalization-Enhanced Code Vulnerability Detection via Multi-Task Instruction Fine-Tuning",
+      "venue": "ACL Findings",
+      "year": 2024,
+      "paper_url": "https://aclanthology.org/2024.findings-acl.625/",
+      "github_url": "https://github.com/CGCL-codes/VulLLM",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "Fine-tuning"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "M2CVD: Enhancing Vulnerability Semantic through Multi-Model Collaboration for Code Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2406.05940",
+      "github_url": "https://github.com/HotFrom/M2CVD",
+      "has_code": true,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "VulDetectBench: Evaluating the Deep Capability of Vulnerability Detection with Large Language Models",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2406.07595",
+      "github_url": "https://github.com/Sweetaroo/VulDetectBench",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "LLM-Assisted Static Analysis for Detecting Security Vulnerabilities",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2405.17238",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Multi-role Consensus through LLMs Discussions for Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2403.14274",
+      "github_url": "https://github.com/rockmao45/llmvulndetection",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "LLMs Cannot Reliably Identify and Reason About Security Vulnerabilities (Yet?): A Comprehensive Evaluation, Framework, and Benchmarks",
+      "venue": "IEEE S&P",
+      "year": 2024,
+      "paper_url": "https://www.computer.org/csdl/proceedings-article/sp/2024/313000a019/1RjE9Wb4Wze",
+      "github_url": "https://github.com/ai4cloudops/secllmholmes",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "Large Language Model for Vulnerability Detection: Emerging Results and Future Directions",
+      "venue": "ICSE",
+      "year": 2024,
+      "paper_url": "https://dl.acm.org/doi/abs/10.1145/3639476.3639762",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Prompt-Enhanced Software Vulnerability Detection Using ChatGPT",
+      "venue": "ICSE",
+      "year": 2024,
+      "paper_url": "https://dl.acm.org/doi/10.1145/3639478.3643065",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Prompting"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "DLAP: A Deep Learning Augmented Large Language Model Prompting Framework for Software Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2405.01202",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Prompting"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Harnessing Large Language Models for Software Vulnerability Detection: A Comprehensive Benchmarking Study",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2405.15614",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "Enhancing Static Analysis for Practical Bug Detection: An LLM-Integrated Approach",
+      "venue": "OOPSLA",
+      "year": 2024,
+      "paper_url": "https://dl.acm.org/doi/10.1145/3649828",
+      "github_url": "https://github.com/seclab-ucr/LLift",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Static Analysis"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Source Code Vulnerability Detection: Combining Code Language Models and Code Property Graphs",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2404.14719",
+      "github_url": "https://github.com/vul-lmgnn/vul-lmggnn",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "Static Analysis",
+        "Graph-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Enhancing Code Vulnerability Detection via Vulnerability-Preserving Data Augmentation",
+      "venue": "LCTES",
+      "year": 2024,
+      "paper_url": "https://dl.acm.org/doi/10.1145/3652032.3657564",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "VulEval: Towards Repository-Level Evaluation of Software Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2404.15596",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Benchmark",
+      "tags": []
+    },
+    {
+      "title": "Large Language Model for Vulnerability Detection and Repair: Literature Review and the Road Ahead",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2404.02525",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Survey",
+      "tags": [
+        "Vulnerability Repair"
+      ]
+    },
+    {
+      "title": "A Comprehensive Study of the Capabilities of Large Language Models for Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2403.17218",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Chain-of-Thought Prompting of Large Language Models for Discovering and Fixing Software Vulnerabilities",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2402.17230",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Prompting"
+      ],
+      "paper_type": "Method",
+      "tags": [
+        "Vulnerability Repair"
+      ]
+    },
+    {
+      "title": "Finetuning Large Language Models for Vulnerability Detection",
+      "venue": "arXiv",
+      "year": 2024,
+      "paper_url": "https://arxiv.org/abs/2401.17010",
+      "github_url": "https://github.com/rmusab/vul-llm-finetune",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Fine-tuning"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "How Far Have We Gone in Vulnerability Detection Using Large Language Models",
+      "venue": "arXiv",
+      "year": 2023,
+      "paper_url": "https://arxiv.org/abs/2311.12420",
+      "github_url": "https://github.com/Hustcw/VulBench",
+      "has_code": true,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Transformer-based Vulnerability Detection in Code at EditTime: Zero-shot, Few-shot, or Fine-tuning?",
+      "venue": "arXiv",
+      "year": 2023,
+      "paper_url": "https://arxiv.org/abs/2306.01754",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based",
+        "Fine-tuning",
+        "Prompting"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Software Vulnerability Detection using Large Language Models",
+      "venue": "IEEE",
+      "year": 2023,
+      "paper_url": "https://ieeexplore.ieee.org/abstract/document/10301302",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "DiverseVul: A New Vulnerable Source Code Dataset for Deep Learning Based Vulnerability Detection",
+      "venue": "RAID",
+      "year": 2023,
+      "paper_url": "https://dl.acm.org/doi/abs/10.1145/3607199.3607242",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [
+        "DiverseVul"
+      ],
+      "methods": [],
+      "paper_type": "Dataset",
+      "tags": []
+    },
+    {
+      "title": "VulBERTa: Simplified Source Code Pre-Training for Vulnerability Detection",
+      "venue": "IEEE",
+      "year": 2022,
+      "paper_url": "https://ieeexplore.ieee.org/abstract/document/9892280",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Deep Learning Based Vulnerability Detection: Are We There Yet?",
+      "venue": "IEEE",
+      "year": 2022,
+      "paper_url": "https://ieeexplore.ieee.org/abstract/document/9448435",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Transformer-Based Language Models for Software Vulnerability Detection",
+      "venue": "ACSAC",
+      "year": 2022,
+      "paper_url": "https://dl.acm.org/doi/abs/10.1145/3564625.3567985",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "LLM-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "Software Vulnerability Detection Using Deep Neural Networks: A Survey",
+      "venue": "IEEE",
+      "year": 2020,
+      "paper_url": "https://ieeexplore.ieee.org/abstract/document/9108283",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [
+        "Benchmark/Survey"
+      ],
+      "paper_type": "Survey",
+      "tags": []
+    },
+    {
+      "title": "Devign: effective vulnerability identification by learning comprehensive program semantics via graph neural networks",
+      "venue": "NeurIPS",
+      "year": 2019,
+      "paper_url": "https://dl.acm.org/doi/abs/10.5555/3454287.3455202",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [
+        "Devign"
+      ],
+      "methods": [
+        "Graph-based"
+      ],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "\u03bc\u03bcVulDeePecker: A Deep Learning-Based System for Multiclass Vulnerability Detection",
+      "venue": "IEEE",
+      "year": 2019,
+      "paper_url": "https://ieeexplore.ieee.org/abstract/document/8846081",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    },
+    {
+      "title": "VulDeePecker: A Deep Learning-Based System for Vulnerability Detection",
+      "venue": "NDSS",
+      "year": 2018,
+      "paper_url": "https://www.ndss-symposium.org/wp-content/uploads/2018/02/ndss2018_03A-2_Li_paper.pdf",
+      "github_url": "",
+      "has_code": false,
+      "datasets": [
+        "VulDeePecker"
+      ],
+      "methods": [],
+      "paper_type": "Method",
+      "tags": []
+    }
+  ],
+  "stats": {
+    "total_papers": 87,
+    "papers_with_code": 36,
+    "venues": {
+      "arXiv": 51,
+      "NDSS": 2,
+      "ACL": 1,
+      "Usenix": 2,
+      "ACL Findings": 2,
+      "SP": 1,
+      "NAACL": 1,
+      "TOSEM": 1,
+      "ICSE": 9,
+      "ASE": 1,
+      "ISSTA": 1,
+      "NeurIPS": 2,
+      "FSE": 1,
+      "EMNLP": 2,
+      "IEEE S&P": 1,
+      "OOPSLA": 1,
+      "LCTES": 1,
+      "IEEE": 5,
+      "RAID": 1,
+      "ACSAC": 1
+    },
+    "years": {
+      "2026": 6,
+      "2025": 26,
+      "2024": 44,
+      "2023": 4,
+      "2022": 3,
+      "2020": 1,
+      "2019": 2,
+      "2018": 1
+    },
+    "top_venues": [
+      [
+        "arXiv",
+        51
+      ],
+      [
+        "ICSE",
+        9
+      ],
+      [
+        "IEEE",
+        5
+      ],
+      [
+        "NDSS",
+        2
+      ],
+      [
+        "Usenix",
+        2
+      ],
+      [
+        "ACL Findings",
+        2
+      ],
+      [
+        "NeurIPS",
+        2
+      ],
+      [
+        "EMNLP",
+        2
+      ],
+      [
+        "ACL",
+        1
+      ],
+      [
+        "SP",
+        1
+      ]
+    ]
+  },
+  "metadata": {
+    "source": "https://github.com/huhusmang/Awesome-LLMs-for-Vulnerability-Detection",
+    "parsed_at": "2026-04-29",
+    "total_papers": 87
+  }
+};
+    
+    const papers = DATA.papers;
+    let filteredPapers = papers;
+    
+    // State
+    let filters = {
+      search: '',
+      year: 'all',
+      code: 'all',
+      method: 'all',
+      type: 'all'
+    };
+
+    // Extract unique values
+    const years = ['all', ...Array.from(new Set(papers.map(p => p.year).filter(y => typeof y === 'number'))).sort().reverse()];
+    const methods = Array.from(new Set(papers.flatMap(p => p.methods || []))).sort();
+    const types = ['all', ...Array.from(new Set(papers.map(p => p.paper_type).filter(Boolean))).sort()];
+
+    // Render stats
+    function renderStats() {
+      const withCode = papers.filter(p => p.has_code).length;
+      const html = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${papers.length}</div>
+            <div class="stat-label">Total Papers</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${withCode}</div>
+            <div class="stat-label">With Code</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${Math.round(withCode/papers.length*100)}%</div>
+            <div class="stat-label">Reproducibility Rate</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${papers.filter(p => (p.methods || []).includes('LLM-based')).length}</div>
+            <div class="stat-label">LLM-based Papers</div>
+          </div>
+        </div>
+      `;
+      document.getElementById('stats').innerHTML = html;
+    }
+
+    // Render controls
+    function renderControls() {
+      const html = `
+        <div class="controls">
+          <input 
+            type="text" 
+            class="search-box" 
+            id="search"
+            placeholder="Search by title, venue, method, dataset..."
+            value="${filters.search}"
+          />
+          <select class="filter-select" id="year-filter">
+            ${years.map(y => `<option value="${y}" ${filters.year === y ? 'selected' : ''}>${y === 'all' ? 'All Years' : y}</option>`).join('')}
+          </select>
+          <select class="filter-select" id="method-filter">
+            <option value="all">All Methods</option>
+            ${methods.map(m => `<option value="${m}" ${filters.method === m ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+          <select class="filter-select" id="type-filter">
+            ${types.map(t => `<option value="${t}" ${filters.type === t ? 'selected' : ''}>${t === 'all' ? 'All Types' : t}</option>`).join('')}
+          </select>
+          <button class="filter-btn ${filters.code === 'all' ? 'active' : ''}" onclick="setCodeFilter('all')">All</button>
+          <button class="filter-btn ${filters.code === 'with-code' ? 'active' : ''}" onclick="setCodeFilter('with-code')">With Code</button>
+        </div>
+      `;
+      document.getElementById('controls').innerHTML = html;
+      
+      // Add event listeners
+      document.getElementById('search').addEventListener('input', (e) => {
+        filters.search = e.target.value;
+        applyFilters();
+      });
+      document.getElementById('year-filter').addEventListener('change', (e) => {
+        filters.year = e.target.value;
+        applyFilters();
+      });
+      document.getElementById('method-filter').addEventListener('change', (e) => {
+        filters.method = e.target.value;
+        applyFilters();
+      });
+      document.getElementById('type-filter').addEventListener('change', (e) => {
+        filters.type = e.target.value;
+        applyFilters();
+      });
+    }
+
+    // Filter papers
+    function applyFilters() {
+      filteredPapers = papers;
+
+      // Search
+      if (filters.search) {
+        const search = filters.search.toLowerCase();
+        filteredPapers = filteredPapers.filter(p =>
+          p.title.toLowerCase().includes(search) ||
+          p.venue.toLowerCase().includes(search) ||
+          (p.methods || []).some(m => m.toLowerCase().includes(search)) ||
+          (p.datasets || []).some(d => d.toLowerCase().includes(search))
+        );
+      }
+
+      // Year
+      if (filters.year !== 'all') {
+        filteredPapers = filteredPapers.filter(p => p.year === parseInt(filters.year));
+      }
+
+      // Method
+      if (filters.method !== 'all') {
+        filteredPapers = filteredPapers.filter(p => (p.methods || []).includes(filters.method));
+      }
+
+      // Type
+      if (filters.type !== 'all') {
+        filteredPapers = filteredPapers.filter(p => p.paper_type === filters.type);
+      }
+
+      // Code
+      if (filters.code === 'with-code') {
+        filteredPapers = filteredPapers.filter(p => p.has_code);
+      }
+
+      renderPapers();
+      renderControls();
+    }
+
+    // Set code filter
+    function setCodeFilter(value) {
+      filters.code = value;
+      applyFilters();
+    }
+
+    // Render papers
+    function renderPapers() {
+      if (filteredPapers.length === 0) {
+        document.getElementById('papers').innerHTML = '<div class="no-results">No papers found matching your filters</div>';
+        return;
+      }
+
+      const html = `
+        <div class="papers-grid">
+          ${filteredPapers.map(p => `
+            <div class="paper-card">
+              <h3 class="paper-title">${p.title}</h3>
+              <div class="paper-meta">
+                <span class="meta-badge">${p.venue}</span>
+                <span class="meta-badge">${p.year}</span>
+                ${p.paper_type ? `<span class="meta-badge type">${p.paper_type}</span>` : ''}
+                ${p.has_code ? '<span class="meta-badge">✓ Code</span>' : ''}
+              </div>
+              ${(p.methods && p.methods.length > 0) ? `
+                <div class="paper-meta">
+                  ${p.methods.map(m => `<span class="meta-badge method">${m}</span>`).join('')}
+                </div>
+              ` : ''}
+              ${(p.datasets && p.datasets.length > 0) ? `
+                <div class="paper-meta">
+                  ${p.datasets.map(d => `<span class="meta-badge dataset">📊 ${d}</span>`).join('')}
+                </div>
+              ` : ''}
+              ${(p.tags && p.tags.length > 0) ? `
+                <div class="paper-meta">
+                  ${p.tags.map(t => `<span class="meta-badge tag">${t}</span>`).join('')}
+                </div>
+              ` : ''}
+              <div class="paper-links">
+                ${p.paper_url ? `<a href="${p.paper_url}" target="_blank" class="link-btn">📄 Paper</a>` : ''}
+                ${p.github_url ? `<a href="${p.github_url}" target="_blank" class="link-btn github">💻 Code</a>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('papers').innerHTML = html;
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStats();
+      renderControls();
+      renderPapers();
+      console.log('VulnResearch Explorer loaded successfully!');
+    });
+  </script>
+</body>
+</html>
