@@ -2,7 +2,7 @@
 
 An interactive visualization tool for exploring research papers on LLM-based vulnerability detection. Browse 87+ papers with rich metadata on methodologies, datasets, and code availability.
 
-🔗 **[Launch Explorer](https://vulnalign.github.io/LLM-vuln-research-explorer/)**
+🔗 **[Launch Explorer](https://vulnalign.github.io/LLM-vuln-research-explorer/index.html)**
 
 ## Features
 
